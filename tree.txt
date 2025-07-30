@@ -1,0 +1,191 @@
+.
+├── .DS_Store
+├── .expo
+│   ├── devices.json
+│   ├── README.md
+│   └── types
+│       └── router.d.ts
+├── .gitignore
+├── .vscode
+│   └── .react
+├── android
+│   ├── .gitignore
+│   ├── app
+│   │   ├── build.gradle
+│   │   ├── debug.keystore
+│   │   ├── proguard-rules.pro
+│   │   └── src
+│   │       ├── debug
+│   │       │   └── AndroidManifest.xml
+│   │       └── main
+│   │           ├── AndroidManifest.xml
+│   │           ├── java
+│   │           │   └── com
+│   │           │       └── oluwaseunisaac
+│   │           │           └── Cointomic
+│   │           │               ├── MainActivity.kt
+│   │           │               └── MainApplication.kt
+│   │           └── res
+│   │               ├── drawable
+│   │               │   ├── ic_launcher_background.xml
+│   │               │   └── rn_edit_text_material.xml
+│   │               ├── drawable-hdpi
+│   │               │   └── splashscreen_logo.png
+│   │               ├── drawable-mdpi
+│   │               │   └── splashscreen_logo.png
+│   │               ├── drawable-xhdpi
+│   │               │   └── splashscreen_logo.png
+│   │               ├── drawable-xxhdpi
+│   │               │   └── splashscreen_logo.png
+│   │               ├── drawable-xxxhdpi
+│   │               │   └── splashscreen_logo.png
+│   │               ├── mipmap-anydpi-v26
+│   │               │   ├── ic_launcher_round.xml
+│   │               │   └── ic_launcher.xml
+│   │               ├── mipmap-hdpi
+│   │               │   ├── ic_launcher_foreground.webp
+│   │               │   ├── ic_launcher_round.webp
+│   │               │   └── ic_launcher.webp
+│   │               ├── mipmap-mdpi
+│   │               │   ├── ic_launcher_foreground.webp
+│   │               │   ├── ic_launcher_round.webp
+│   │               │   └── ic_launcher.webp
+│   │               ├── mipmap-xhdpi
+│   │               │   ├── ic_launcher_foreground.webp
+│   │               │   ├── ic_launcher_round.webp
+│   │               │   └── ic_launcher.webp
+│   │               ├── mipmap-xxhdpi
+│   │               │   ├── ic_launcher_foreground.webp
+│   │               │   ├── ic_launcher_round.webp
+│   │               │   └── ic_launcher.webp
+│   │               ├── mipmap-xxxhdpi
+│   │               │   ├── ic_launcher_foreground.webp
+│   │               │   ├── ic_launcher_round.webp
+│   │               │   └── ic_launcher.webp
+│   │               ├── values
+│   │               │   ├── colors.xml
+│   │               │   ├── strings.xml
+│   │               │   └── styles.xml
+│   │               └── values-night
+│   │                   └── colors.xml
+│   ├── build.gradle
+│   ├── gradle
+│   │   └── wrapper
+│   │       ├── gradle-wrapper.jar
+│   │       └── gradle-wrapper.properties
+│   ├── gradle.properties
+│   ├── gradlew
+│   ├── gradlew.bat
+│   └── settings.gradle
+├── app
+│   ├── _layout.tsx
+│   ├── (authenticated)
+│   │   ├── (modals)
+│   │   │   ├── account.tsx
+│   │   │   └── lock.tsx
+│   │   ├── (tabs)
+│   │   │   ├── _layout.tsx
+│   │   │   ├── crypto.tsx
+│   │   │   ├── home.tsx
+│   │   │   ├── invest.tsx
+│   │   │   ├── lifestyle.tsx
+│   │   │   └── transfers.tsx
+│   │   └── crypto
+│   │       └── [id].tsx
+│   ├── api
+│   │   ├── info+api.ts
+│   │   ├── listings+api.ts
+│   │   └── tickers+api.ts
+│   ├── help.tsx
+│   ├── index.tsx
+│   ├── login.tsx
+│   ├── signup.tsx
+│   └── verify
+│       └── [phone].tsx
+├── app.json
+├── assets
+│   ├── .DS_Store
+│   ├── fonts
+│   │   ├── fonts.d.ts
+│   │   └── SpaceMono-Regular.ttf
+│   ├── images
+│   │   ├── .DS_Store
+│   │   ├── adaptive-icon.png
+│   │   ├── favicon-16x16.png
+│   │   ├── favicon.png
+│   │   ├── icon.png
+│   │   ├── logo_icon_black-removebg.png
+│   │   ├── logo_icon_black.png
+│   │   ├── logo_icon_orange-removebg.png
+│   │   ├── logo_icon_orange.png
+│   │   ├── logo_icon_white-removebg.png
+│   │   ├── logo_icon_white.png
+│   │   ├── nigeria.png
+│   │   └── splash.png
+│   └── videos
+│       ├── cointomic.mp4
+│       ├── intro.mp4
+│       └── intro2.mp4
+├── babel.config.js
+├── components
+│   ├── CustomHeader.tsx
+│   ├── Dropdown.tsx
+│   ├── RoundBtn.tsx
+│   └── SortableList
+│       ├── Config.tsx
+│       ├── Item.tsx
+│       ├── SortableList.tsx
+│       ├── Tile.tsx
+│       └── WidgetList.tsx
+├── constants
+│   ├── Colors.ts
+│   └── Styles.ts
+├── context
+│   └── UserInactivity.tsx
+├── expo-env.d.ts
+├── index.txt
+├── interfaces
+│   └── crypto.ts
+├── ios
+│   ├── .gitignore
+│   ├── .xcode.env
+│   ├── Cointomic
+│   │   ├── AppDelegate.swift
+│   │   ├── Cointomic-Bridging-Header.h
+│   │   ├── Cointomic.entitlements
+│   │   ├── Images.xcassets
+│   │   │   ├── AppIcon.appiconset
+│   │   │   │   ├── App-Icon-1024x1024@1x.png
+│   │   │   │   └── Contents.json
+│   │   │   ├── Contents.json
+│   │   │   ├── SplashScreenBackground.colorset
+│   │   │   │   └── Contents.json
+│   │   │   └── SplashScreenLogo.imageset
+│   │   │       ├── Contents.json
+│   │   │       ├── image.png
+│   │   │       ├── image@2x.png
+│   │   │       └── image@3x.png
+│   │   ├── Info.plist
+│   │   ├── SplashScreen.storyboard
+│   │   └── Supporting
+│   │       └── Expo.plist
+│   ├── Cointomic.xcodeproj
+│   │   ├── project.pbxproj
+│   │   ├── project.xcworkspace
+│   │   │   ├── contents.xcworkspacedata
+│   │   │   └── xcshareddata
+│   │   │       └── IDEWorkspaceChecks.plist
+│   │   └── xcshareddata
+│   │       └── xcschemes
+│   │           └── Cointomic.xcscheme
+│   ├── Podfile
+│   └── Podfile.properties.json
+├── package-lock.json
+├── package.json
+├── store
+│   ├── balanceStore.ts
+│   └── mmkv-storage.ts
+├── tree.txt
+└── tsconfig.json
+
+60 directories, 129 files

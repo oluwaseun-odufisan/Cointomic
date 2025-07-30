@@ -4,13 +4,13 @@ import Colors from "@/constants/Colors";
 export const defaultStyles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.background, // #F8F7F4 (Off-White) for a warm, clean background
+        backgroundColor: Colors.background, // #FFF8F0 (Warm Cream) for a cozy, orange-friendly background
         padding: 16,
     },
     header: {
         fontSize: 40,
         fontWeight: "700",
-        color: Colors.dark, // #1A1C1E (Deep Charcoal) for high-contrast, readable headers
+        color: Colors.dark, // #1F1A15 (Warm Black) for high-contrast, readable headers
     },
     pillButton: {
         padding: 10,
@@ -18,20 +18,20 @@ export const defaultStyles = StyleSheet.create({
         borderRadius: 40,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: Colors.primary, // #D4A017 (Gold Amber) for prominent buttons
+        backgroundColor: Colors.primary, // #FF6600 (Dark Saturated Orange) for prominent buttons
     },
     textLink: {
-        color: Colors.primary, // #D4A017 (Gold Amber) for links to align with brand
+        color: Colors.primary, // #FF6600 (Dark Saturated Orange) for links to align with brand
         fontSize: 18,
         fontWeight: "500",
     },
     descriptionText: {
         fontSize: 18,
         marginTop: 20,
-        color: Colors.gray, // #6B6F66 (Warm Gray) for secondary text
+        color: Colors.gray, // #7A6B5D (Warm Taupe Gray) for secondary text
     },
     buttonText: {
-        color: Colors.background, // #F8F7F4 (Off-White) for text on primary-colored buttons
+        color: Colors.background, // #FFF8F0 (Warm Cream) for text on primary-colored buttons
         fontSize: 18,
         fontWeight: "500",
     },
@@ -41,10 +41,10 @@ export const defaultStyles = StyleSheet.create({
         borderRadius: 20,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: Colors.primaryMuted, // #E8C680 (Soft Amber) for secondary buttons
+        backgroundColor: Colors.primaryMuted, // #FF9B66 (Muted Coral Orange) for secondary buttons
     },
     buttonTextSmall: {
-        color: Colors.dark, // #1A1C1E (Deep Charcoal) for contrast on muted buttons
+        color: Colors.dark, // #1F1A15 (Warm Black) for contrast on muted buttons
         fontSize: 16,
         fontWeight: "500",
     },
@@ -53,12 +53,12 @@ export const defaultStyles = StyleSheet.create({
         fontWeight: "bold",
         margin: 20,
         marginBottom: 10,
-        color: Colors.dark, // #1A1C1E (Deep Charcoal) for section headers
+        color: Colors.dark, // #1F1A15 (Warm Black) for section headers
     },
     block: {
         marginHorizontal: 20,
         padding: 14,
-        backgroundColor: Colors.lightGray, // #D9D9D5 (Pale Gray) for subtle card backgrounds
+        backgroundColor: Colors.lightGray, // #E6DED5 (Soft Warm Gray) for subtle card backgrounds
         borderRadius: 16,
         gap: 20,
     },
