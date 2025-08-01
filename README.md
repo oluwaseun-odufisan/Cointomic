@@ -29,20 +29,20 @@ Cointomic’s intuitive UI is showcased in `doc/diagrams/` with the following sc
 - **Splash Page** (`app/index.tsx`):
   - Description: Welcoming launch screen introducing the Cointomic experience.
   - Screenshot:
-    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/doc/diagrams/splash.png" alt="Splash Screen" width="200"/>
+    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/docs/diagrams/splash.png" alt="Splash Screen" width="200"/>
 
 - **Sign-In Screen** (`app/login.tsx`):
   - Description: Secure sign-in with Clerk authentication, supporting email/password and Google OAuth.
   - Screenshot:
-    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/doc/diagrams/signin.gif" alt="Sign-In Screen Animation" width="200"/>
+    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/docs/diagrams/signin.gif" alt="Sign-In Screen Animation" width="200"/>
 
 - **Home Screen** (`app/(authenticated)/(tabs)/home.tsx`):
   - Description: Main dashboard displaying balance, top cryptocurrencies, and recent transactions.
   - Screenshots:
     <table>
       <tr>
-        <td><img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/doc/diagrams/home.png" alt="Home Screen" width="200"/></td>
-        <td><img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/doc/diagrams/home.gif" alt="Home Screen Animation" width="200"/></td>
+        <td><img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/docs/diagrams/home.png" alt="Home Screen" width="200"/></td>
+        <td><img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/docs/diagrams/home.gif" alt="Home Screen Animation" width="200"/></td>
       </tr>
       <tr>
         <td align="center">Home Screen</td>
@@ -53,26 +53,26 @@ Cointomic’s intuitive UI is showcased in `doc/diagrams/` with the following sc
 - **Crypto Page** (`app/(authenticated)/crypto/[id].tsx`):
   - Description: Detailed view of a cryptocurrency with real-time data and trends.
   - Screenshot:
-    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/doc/diagrams/crypto.png" alt="Crypto Page" width="200"/>
+    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/docs/diagrams/crypto.png" alt="Crypto Page" width="200"/>
 
 - **Transfers Page** (`app/(authenticated)/(tabs)/transfers.tsx`):
   - Description: Streamlined interface for sending and receiving crypto transactions.
   - Screenshot:
-    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/doc/diagrams/transfers.png" alt="Transfers Page" width="200"/>
+    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/docs/diagrams/transfers.png" alt="Transfers Page" width="200"/>
 
 - **Invest Page** (`app/(authenticated)/(tabs)/invest.tsx`):
   - Description: Explore investment opportunities in cryptocurrencies.
   - Screenshot:
-    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/doc/diagrams/invest.png" alt="Invest Page" width="200"/>
+    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/docs/diagrams/invest.png" alt="Invest Page" width="200"/>
 
 - **Lifestyle Page** (`app/(authenticated)/(tabs)/lifestyle.tsx`):
   - Description: Financial lifestyle features for personalized user experiences.
   - Screenshot:
-    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/doc/diagrams/lifestyle.png" alt="Lifestyle Page" width="200"/>
+    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/docs/diagrams/lifestyle.png" alt="Lifestyle Page" width="200"/>
 
 - **Profile Page** 
   - Screenshot:
-    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/doc/diagrams/profile.png" alt="Lifestyle Page" width="200"/>
+    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/docs/diagrams/profile.png" alt="Lifestyle Page" width="200"/>
 
 
 ## Architecture
