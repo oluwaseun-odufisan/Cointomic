@@ -53,17 +53,17 @@ Cointomic’s intuitive UI is showcased in `doc/diagrams/` with the following sc
 - **Crypto Page** (`app/(authenticated)/crypto/[id].tsx`):
   - Description: Detailed view of a cryptocurrency with real-time data and trends.
   - Screenshot:
-    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/docs/diagrams/crypto.png" alt="Crypto Page" width="200"/>
+    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/docs/diagrams/crypto.gif" alt="Crypto Page" width="200"/>
 
 - **Transfers Page** (`app/(authenticated)/(tabs)/transfers.tsx`):
   - Description: Streamlined interface for sending and receiving crypto transactions.
   - Screenshot:
-    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/docs/diagrams/transfers.png" alt="Transfers Page" width="200"/>
+    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/docs/diagrams/transfers.gif" alt="Transfers Page" width="200"/>
 
 - **Invest Page** (`app/(authenticated)/(tabs)/invest.tsx`):
   - Description: Explore investment opportunities in cryptocurrencies.
   - Screenshot:
-    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/docs/diagrams/invest.png" alt="Invest Page" width="200"/>
+    <img src="https://raw.githubusercontent.com/oluwaseun-odufisan/Cointomic/main/docs/diagrams/invest.gif" alt="Invest Page" width="200"/>
 
 - **Lifestyle Page** (`app/(authenticated)/(tabs)/lifestyle.tsx`):
   - Description: Financial lifestyle features for personalized user experiences.
