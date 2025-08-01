@@ -95,12 +95,19 @@
 │   ├── api
 │   │   ├── info+api.ts
 │   │   ├── listings+api.ts
-│   │   └── tickers+api.ts
+│   │   ├── tickers+api.ts
+│   │   └── user+api.ts
+│   ├── db
+│   │   └── schema.ts
 │   ├── help.tsx
 │   ├── index.tsx
+│   ├── lib
+│   │   ├── auth.ts
+│   │   └── fetch.ts
 │   ├── login.tsx
 │   ├── signup.tsx
 │   └── verify
+│       ├── [email].tsx
 │       └── [phone].tsx
 ├── app.json
 ├── assets
@@ -113,6 +120,7 @@
 │   │   ├── adaptive-icon.png
 │   │   ├── favicon-16x16.png
 │   │   ├── favicon.png
+│   │   ├── google.png
 │   │   ├── icon.png
 │   │   ├── logo_icon_black-removebg.png
 │   │   ├── logo_icon_black.png
@@ -139,9 +147,19 @@
 │       └── WidgetList.tsx
 ├── constants
 │   ├── Colors.ts
+│   ├── icons.ts
 │   └── Styles.ts
 ├── context
 │   └── UserInactivity.tsx
+├── drizzle
+│   ├── 0000_create_users.sql
+│   ├── 0000_fancy_ronan.sql
+│   ├── 0001_low_stryfe.sql
+│   └── meta
+│       ├── _journal.json
+│       ├── 0000_snapshot.json
+│       └── 0001_snapshot.json
+├── drizzle.config.ts
 ├── expo-env.d.ts
 ├── index.txt
 ├── interfaces
@@ -180,12 +198,16 @@
 │   │           └── Cointomic.xcscheme
 │   ├── Podfile
 │   └── Podfile.properties.json
+├── metro.config.js
 ├── package-lock.json
 ├── package.json
 ├── store
-│   ├── balanceStore.ts
-│   └── mmkv-storage.ts
+│   ├── async-storage.ts
+│   └── balanceStore.ts
 ├── tree.txt
-└── tsconfig.json
+├── tsconfig.json
+└── utils
+    ├── currencyUtils.ts
+    └── userStore.ts
 
-60 directories, 129 files
+65 directories, 146 files

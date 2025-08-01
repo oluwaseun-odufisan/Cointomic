@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { zustandStorage } from '@/store/mmkv-storage';
+import { zustandStorage } from '@/store/async-storage';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 export interface Transaction {

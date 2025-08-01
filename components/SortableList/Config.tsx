@@ -6,30 +6,28 @@ export interface Positions {
 }
 
 const { width } = Dimensions.get('window');
-export const MARGIN = 20;
-export const SIZE = width / 2 - MARGIN;
+export const MARGIN = 16;
+export const SIZE = (width - MARGIN * 3) / 2;
 export const COL = 2;
 
 export const animationConfig = {
   easing: Easing.inOut(Easing.ease),
-  duration: 350,
+  duration: 400,
 };
 
-export const getPosition = (position: number) => {
+export const getPosition = (position: number): { x: number; y: number } => {
   'worklet';
-
   return {
-    x: position % COL === 0 ? 0 : SIZE * (position % COL),
-    y: Math.floor(position / COL) * SIZE,
+    x: position % COL === 0 ? MARGIN : MARGIN + SIZE + MARGIN,
+    y: Math.floor(position / COL) * (SIZE + MARGIN) + MARGIN,
   };
 };
 
-export const getOrder = (tx: number, ty: number, max: number) => {
+export const getOrder = (tx: number, ty: number, max: number): number => {
   'worklet';
-
-  const x = Math.round(tx / SIZE) * SIZE;
-  const y = Math.round(ty / SIZE) * SIZE;
-  const row = Math.max(y, 0) / SIZE;
-  const col = Math.max(x, 0) / SIZE;
+  const x = Math.round((tx - MARGIN) / (SIZE + MARGIN)) * (SIZE + MARGIN);
+  const y = Math.round((ty - MARGIN) / (SIZE + MARGIN)) * (SIZE + MARGIN);
+  const row = Math.max(y, 0) / (SIZE + MARGIN);
+  const col = Math.max(x, 0) / (SIZE + MARGIN);
   return Math.min(row * COL + col, max);
 };

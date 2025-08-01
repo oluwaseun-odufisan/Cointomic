@@ -1,6 +1,6 @@
 import Colors from '@/constants/Colors';
 import { defaultStyles } from '@/constants/Styles';
-import { isClerkAPIResponseError, useSignIn } from '@clerk/clerk-expo';
+import { isClerkAPIResponseError, useSignIn, useOAuth } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -16,9 +16,12 @@ import {
     FlatList,
     TouchableWithoutFeedback,
     Keyboard,
+    ActivityIndicator,
+    Image,
 } from 'react-native';
+import { googleOAuth, appleOAuth } from '@/app/lib/auth';
+import { icons } from '@/constants/icons';
 
-// Comprehensive country code list, prioritizing Nigeria
 const countryCodes = [
     { name: 'Nigeria', code: '+234' },
     { name: 'United States', code: '+1' },
@@ -50,10 +53,15 @@ enum SignInType {
 const Login = () => {
     const [countryCode, setCountryCode] = useState('+234');
     const [phoneNumber, setPhoneNumber] = useState('');
+    const [email, setEmail] = useState('');
     const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [inputType, setInputType] = useState<SignInType>(SignInType.Phone); // Default to phone input
     const keyboardVerticalOffset = Platform.OS === 'ios' ? 80 : 0;
     const router = useRouter();
     const { signIn, isLoaded } = useSignIn();
+    const { startOAuthFlow: startGoogleOAuth } = useOAuth({ strategy: 'oauth_google' });
+    const { startOAuthFlow: startAppleOAuth } = useOAuth({ strategy: 'oauth_apple' });
 
     const onSignIn = async (type: SignInType) => {
         if (!isLoaded) {
@@ -61,17 +69,16 @@ const Login = () => {
             return;
         }
 
-        if (type === SignInType.Phone) {
-            // Ensure phone number is in E.164 format (e.g., +2341234567890)
-            const fullPhoneNumber = `${countryCode}${phoneNumber.replace(/\D/g, '')}`;
+        setLoading(true);
 
-            // Validate phone number format
-            if (!fullPhoneNumber.match(/^\+\d{10,15}$/)) {
-                Alert.alert('Error', 'Please enter a valid phone number (10-15 digits).');
-                return;
-            }
+        try {
+            if (type === SignInType.Phone) {
+                const fullPhoneNumber = `${countryCode}${phoneNumber.replace(/\D/g, '')}`;
+                if (!fullPhoneNumber.match(/^\+\d{10,15}$/)) {
+                    Alert.alert('Error', 'Please enter a valid phone number (10-15 digits).');
+                    return;
+                }
 
-            try {
                 const { supportedFirstFactors } = await signIn!.create({
                     identifier: fullPhoneNumber,
                 });
@@ -81,7 +88,7 @@ const Login = () => {
                 );
 
                 if (!phoneFactor) {
-                    throw new Error('Phone verification is not supported for this account.');
+                    throw new Error('Phone verification is not supported.');
                 }
 
                 const { phoneNumberId } = phoneFactor;
@@ -95,20 +102,75 @@ const Login = () => {
                     pathname: '/verify/[phone]',
                     params: { phone: fullPhoneNumber, signin: 'true' },
                 });
-            } catch (err: any) {
-                console.error('Error signing in:', JSON.stringify(err, null, 2));
-                let errorMessage = 'Failed to sign in. Please try again.';
-                if (isClerkAPIResponseError(err)) {
-                    errorMessage = err.errors[0]?.longMessage || errorMessage;
-                } else if (err.message.includes('Network request failed')) {
-                    errorMessage = 'Network error. Please check your connection and try again.';
-                } else if (err.message.includes('Phone verification is not supported')) {
-                    errorMessage = 'Phone verification is not enabled. Please contact support.';
+            } else if (type === SignInType.Email) {
+                if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+                    Alert.alert('Error', 'Please enter a valid email address.');
+                    return;
                 }
-                Alert.alert('Error', errorMessage);
+
+                const { supportedFirstFactors } = await signIn!.create({
+                    identifier: email,
+                });
+
+                const emailFactor = supportedFirstFactors.find((factor: any) =>
+                    factor.strategy === 'email_code'
+                );
+
+                if (!emailFactor) {
+                    throw new Error('Email verification is not supported.');
+                }
+
+                const { emailAddressId } = emailFactor;
+
+                await signIn!.prepareFirstFactor({
+                    strategy: 'email_code',
+                    emailAddressId,
+                });
+
+                router.push({
+                    pathname: '/verify/[email]',
+                    params: { email, signin: 'true' },
+                });
+            } else if (type === SignInType.Google) {
+                const result = await googleOAuth(startGoogleOAuth);
+                if (result.success) {
+                    setTimeout(() => {
+                        router.replace('/(authenticated)/(tabs)/home');
+                    }, 100);
+                } else {
+                    Alert.alert('Error', result.message);
+                }
+            } else if (type === SignInType.Apple) {
+                const result = await appleOAuth(startAppleOAuth);
+                if (result.success) {
+                    setTimeout(() => {
+                        router.replace('/(authenticated)/(tabs)/home');
+                    }, 100);
+                } else {
+                    Alert.alert('Error', result.message);
+                }
             }
+        } catch (err: any) {
+            console.error('Error signing in:', JSON.stringify(err, null, 2));
+            let errorMessage = 'Failed to sign in. Please try again.';
+            if (isClerkAPIResponseError(err)) {
+                errorMessage = err.errors[0]?.longMessage || errorMessage;
+            } else if (err.message.includes('Network request failed')) {
+                errorMessage = 'Network error. Please check your connection and try again.';
+            } else if (err.message.includes('not supported')) {
+                errorMessage = 'This sign-in method is not enabled. Please contact support.';
+            }
+            Alert.alert('Error', errorMessage);
+        } finally {
+            setLoading(false);
         }
-        // TODO: Implement Email, Google, and Apple sign-in flows
+    };
+
+    const handleSwitchInput = () => {
+        setInputType(inputType === SignInType.Phone ? SignInType.Email : SignInType.Phone);
+        setPhoneNumber('');
+        setEmail('');
+        setShowCountryDropdown(false);
     };
 
     const renderCountryItem = ({ item }: { item: { name: string; code: string } }) => (
@@ -132,84 +194,114 @@ const Login = () => {
                     <Text style={styles.header}>Welcome to Cointomic</Text>
                     <Text style={styles.subHeader}>Sign in to continue</Text>
 
-                    {/* Phone Number Input with Country Code Dropdown */}
-                    <View style={styles.inputContainer}>
+                    <View style={styles.inputSection}>
+                        {inputType === SignInType.Phone && (
+                            <View style={styles.inputContainer}>
+                                <TouchableOpacity
+                                    style={styles.countryCodeButton}
+                                    onPress={() => setShowCountryDropdown(!showCountryDropdown)}>
+                                    <Text style={styles.countryCodeText}>{countryCode}</Text>
+                                    <Ionicons
+                                        name={showCountryDropdown ? 'chevron-up' : 'chevron-down'}
+                                        size={20}
+                                        color={Colors.gray}
+                                    />
+                                </TouchableOpacity>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Phone Number"
+                                    placeholderTextColor={Colors.gray}
+                                    keyboardType="numeric"
+                                    value={phoneNumber}
+                                    onChangeText={setPhoneNumber}
+                                />
+                            </View>
+                        )}
+
+                        {showCountryDropdown && inputType === SignInType.Phone && (
+                            <View style={styles.dropdownContainer}>
+                                <FlatList
+                                    data={countryCodes}
+                                    renderItem={renderCountryItem}
+                                    keyExtractor={(item) => item.code}
+                                    style={styles.dropdown}
+                                    showsVerticalScrollIndicator={true}
+                                />
+                            </View>
+                        )}
+
+                        {inputType === SignInType.Email && (
+                            <View style={styles.inputContainer}>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Email Address"
+                                    placeholderTextColor={Colors.gray}
+                                    keyboardType="email-address"
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    autoCapitalize="none"
+                                />
+                            </View>
+                        )}
+                    </View>
+
+                    <View style={styles.buttonSection}>
                         <TouchableOpacity
-                            style={styles.countryCodeButton}
-                            onPress={() => setShowCountryDropdown(!showCountryDropdown)}>
-                            <Text style={styles.countryCodeText}>{countryCode}</Text>
-                            <Ionicons
-                                name={showCountryDropdown ? 'chevron-up' : 'chevron-down'}
-                                size={20}
-                                color={Colors.gray}
-                            />
+                            style={[
+                                defaultStyles.pillButton,
+                                (inputType === SignInType.Phone ? phoneNumber : email) ? styles.enabled : styles.disabled,
+                                styles.actionButton,
+                            ]}
+                            onPress={() => onSignIn(inputType)}
+                            disabled={inputType === SignInType.Phone ? !phoneNumber || loading : !email || loading}>
+                            <Text style={defaultStyles.buttonText}>
+                                {inputType === SignInType.Phone ? 'Continue with Phone' : 'Continue with Email'}
+                            </Text>
+                            {loading && <ActivityIndicator size="small" color="#fff" style={styles.buttonLoader} />}
                         </TouchableOpacity>
-                        <TextInput
-                            style={styles.phoneInput}
-                            placeholder="Phone Number"
-                            placeholderTextColor={Colors.gray}
-                            keyboardType="numeric"
-                            value={phoneNumber}
-                            onChangeText={setPhoneNumber}
-                        />
-                    </View>
 
-                    {showCountryDropdown && (
-                        <View style={styles.dropdownContainer}>
-                            <FlatList
-                                data={countryCodes}
-                                renderItem={renderCountryItem}
-                                keyExtractor={(item) => item.code}
-                                style={styles.dropdown}
-                                showsVerticalScrollIndicator={true}
-                            />
+                        <View style={styles.dividerContainer}>
+                            <View style={styles.dividerLine} />
+                            <Text style={styles.dividerText}>or sign in with</Text>
+                            <View style={styles.dividerLine} />
                         </View>
-                    )}
 
-                    {/* Continue Button */}
-                    <TouchableOpacity
-                        style={[
-                            defaultStyles.pillButton,
-                            phoneNumber ? styles.enabled : styles.disabled,
-                            styles.continueButton,
-                        ]}
-                        onPress={() => onSignIn(SignInType.Phone)}
-                        disabled={!phoneNumber}>
-                        <Text style={defaultStyles.buttonText}>Continue with Phone</Text>
-                    </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.socialButton}
+                            onPress={handleSwitchInput}
+                            disabled={loading}>
+                            <Ionicons
+                                name={inputType === SignInType.Phone ? 'mail' : 'call'}
+                                size={24}
+                                color={Colors.dark}
+                            />
+                            <Text style={styles.socialButtonText}>
+                                {inputType === SignInType.Phone ? 'Continue with Email' : 'Continue with Phone'}
+                            </Text>
+                            {loading && <ActivityIndicator size="small" color={Colors.dark} style={styles.buttonLoader} />}
+                        </TouchableOpacity>
 
-                    {/* Divider */}
-                    <View style={styles.dividerContainer}>
-                        <View style={styles.dividerLine} />
-                        <Text style={styles.dividerText}>or sign in with</Text>
-                        <View style={styles.dividerLine} />
+                        <TouchableOpacity
+                            style={styles.socialButton}
+                            onPress={() => onSignIn(SignInType.Google)}
+                            disabled={loading}>
+                            <Image source={icons.google} style={styles.socialIcon} />
+                            <Text style={styles.socialButtonText}>Continue with Google</Text>
+                            {loading && <ActivityIndicator size="small" color={Colors.dark} style={styles.buttonLoader} />}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.socialButton}
+                            onPress={() => onSignIn(SignInType.Apple)}
+                            disabled={loading}>
+                            <Ionicons name="logo-apple" size={24} color={Colors.dark} />
+                            <Text style={styles.socialButtonText}>Continue with Apple</Text>
+                            {loading && <ActivityIndicator size="small" color={Colors.dark} style={styles.buttonLoader} />}
+                        </TouchableOpacity>
                     </View>
 
-                    {/* Social Login Buttons */}
-                    <TouchableOpacity
-                        style={styles.socialButton}
-                        onPress={() => onSignIn(SignInType.Email)}>
-                        <Ionicons name="mail" size={24} color={Colors.dark} />
-                        <Text style={styles.socialButtonText}>Continue with Email</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.socialButton}
-                        onPress={() => onSignIn(SignInType.Google)}>
-                        <Ionicons name="logo-google" size={24} color={Colors.dark} />
-                        <Text style={styles.socialButtonText}>Continue with Google</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.socialButton}
-                        onPress={() => onSignIn(SignInType.Apple)}>
-                        <Ionicons name="logo-apple" size={24} color={Colors.dark} />
-                        <Text style={styles.socialButtonText}>Continue with Apple</Text>
-                    </TouchableOpacity>
-
-                    {/* Sign Up Link */}
-                    <View style={styles.signupContainer}>
-                        <Text style={styles.signupText}>Don't have an account? </Text>
+                    <View style={styles.footer}>
+                        <Text style={styles.footerText}>Don't have an account? </Text>
                         <Link href="/signup" replace asChild>
                             <TouchableOpacity>
                                 <Text style={defaultStyles.textLink}>Sign Up</Text>
@@ -237,49 +329,66 @@ const styles = StyleSheet.create({
         fontSize: 32,
         fontWeight: '700',
         color: Colors.dark,
-        marginBottom: 8,
+        marginBottom: 12,
+        textAlign: 'center',
     },
     subHeader: {
         fontSize: 16,
         color: Colors.gray,
         marginBottom: 32,
+        textAlign: 'center',
+    },
+    inputSection: {
+        width: '100%',
+        marginBottom: 24,
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         width: '100%',
-        marginBottom: 24,
+        marginBottom: 16,
     },
     countryCodeButton: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: Colors.lightGray,
         borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
+        paddingHorizontal: 12,
+        paddingVertical: 16,
         marginRight: 12,
+        borderWidth: 1,
+        borderColor: Colors.gray,
+        minWidth: 80,
     },
     countryCodeText: {
         fontSize: 16,
         color: Colors.dark,
         marginRight: 8,
     },
-    phoneInput: {
+    input: {
         flex: 1,
         backgroundColor: Colors.lightGray,
         borderRadius: 12,
-        padding: 14,
+        padding: 16,
         fontSize: 16,
         color: Colors.dark,
+        borderWidth: 1,
+        borderColor: Colors.gray,
+        minHeight: 56,
     },
     dropdownContainer: {
         width: '100%',
         maxHeight: 200,
         backgroundColor: Colors.lightGray,
         borderRadius: 12,
-        marginBottom: 24,
         borderWidth: 1,
         borderColor: Colors.gray,
+        marginBottom: 16,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
     },
     dropdown: {
         width: '100%',
@@ -293,9 +402,15 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: Colors.dark,
     },
-    continueButton: {
+    buttonSection: {
         width: '100%',
         marginBottom: 24,
+    },
+    actionButton: {
+        width: '100%',
+        marginBottom: 16,
+        paddingVertical: 16,
+        borderRadius: 12,
     },
     enabled: {
         backgroundColor: Colors.primary,
@@ -307,7 +422,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         width: '100%',
-        marginVertical: 24,
+        marginVertical: 20,
     },
     dividerLine: {
         flex: 1,
@@ -318,6 +433,7 @@ const styles = StyleSheet.create({
         color: Colors.gray,
         fontSize: 14,
         marginHorizontal: 16,
+        fontWeight: '500',
     },
     socialButton: {
         flexDirection: 'row',
@@ -326,20 +442,29 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.lightGray,
         borderRadius: 12,
         padding: 14,
-        marginBottom: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: Colors.gray,
     },
     socialButtonText: {
         fontSize: 16,
         color: Colors.dark,
-        marginLeft: 16,
+        marginLeft: 12,
         fontWeight: '500',
     },
-    signupContainer: {
+    socialIcon: {
+        width: 24,
+        height: 24,
+    },
+    buttonLoader: {
+        marginLeft: 8,
+    },
+    footer: {
         flexDirection: 'row',
         alignItems: 'center',
         marginTop: 24,
     },
-    signupText: {
+    footerText: {
         fontSize: 16,
         color: Colors.gray,
     },

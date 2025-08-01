@@ -1,135 +1,168 @@
 import Colors from '@/constants/Colors';
 import { defaultStyles } from '@/constants/Styles';
-import { isClerkAPIResponseError, useSignIn, useSignUp } from '@clerk/clerk-expo';
-import { Link, useLocalSearchParams } from 'expo-router';
-import { Fragment, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { useSignIn, useSignUp } from '@clerk/clerk-expo';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
-  CodeField,
-  Cursor,
-  useBlurOnFulfill,
-  useClearByFocusCell,
-} from 'react-native-confirmation-code-field';
-const CELL_COUNT = 6;
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from 'react-native';
+import { fetchAPI } from '@/app/lib/fetch';
 
-const Page = () => {
-  const { phone, signin } = useLocalSearchParams<{ phone: string; signin: string }>();
+const VerifyPhone = () => {
   const [code, setCode] = useState('');
-  const { signIn } = useSignIn();
-  const { signUp, setActive } = useSignUp();
+  const [loading, setLoading] = useState(false);
+  const { phone, signin } = useLocalSearchParams<{ phone: string; signin?: string }>();
+  const { signUp, isLoaded: signUpLoaded } = useSignUp();
+  const { signIn, isLoaded: signInLoaded } = useSignIn();
+  const router = useRouter();
+  const keyboardVerticalOffset = Platform.OS === 'ios' ? 80 : 0;
 
-  const ref = useBlurOnFulfill({ value: code, cellCount: CELL_COUNT });
-  const [props, getCellOnLayoutHandler] = useClearByFocusCell({
-    value: code,
-    setValue: setCode,
-  });
+  const onVerify = async () => {
+    if (!signUpLoaded || !signInLoaded) {
+      Alert.alert('Error', 'Authentication service is not ready. Please try again.');
+      return;
+    }
 
-  useEffect(() => {
-    if (code.length === 6) {
+    setLoading(true);
+
+    try {
       if (signin === 'true') {
-        verifySignIn();
+        const { createdSessionId } = await signIn!.attemptFirstFactor({
+          strategy: 'phone_code',
+          code,
+        });
+
+        if (createdSessionId) {
+          await signIn!.setActive({ session: createdSessionId });
+          router.replace('/(authenticated)/(tabs)/home');
+        } else {
+          throw new Error('Failed to sign in. Invalid code.');
+        }
       } else {
-        verifyCode();
-      }
-    }
-  }, [code]);
+        const { createdSessionId, createdUserId } = await signUp!.attemptPhoneNumberVerification({
+          code,
+        });
 
-  const verifyCode = async () => {
-    try {
-      await signUp!.attemptPhoneNumberVerification({
-        code,
-      });
-      await setActive!({ session: signUp!.createdSessionId });
-    } catch (err) {
-      console.log('error', JSON.stringify(err, null, 2));
-      if (isClerkAPIResponseError(err)) {
-        Alert.alert('Error', err.errors[0].message);
-      }
-    }
-  };
+        if (createdSessionId && createdUserId) {
+          await signUp!.setActive({ session: createdSessionId });
 
-  const verifySignIn = async () => {
-    try {
-      await signIn!.attemptFirstFactor({
-        strategy: 'phone_code',
-        code,
-      });
-      await setActive!({ session: signIn!.createdSessionId });
-    } catch (err) {
-      console.log('error', JSON.stringify(err, null, 2));
-      if (isClerkAPIResponseError(err)) {
-        Alert.alert('Error', err.errors[0].message);
+          const name = `${signUp!.firstName || 'User'} ${signUp!.lastName || ''}`.trim();
+          await fetchAPI('/api/user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name,
+              email: signUp!.emailAddress || 'unknown@example.com',
+              clerkId: createdUserId,
+            }),
+          });
+
+          router.replace('/(authenticated)/(tabs)/home');
+        } else {
+          throw new Error('Failed to sign up. Invalid code.');
+        }
       }
+    } catch (error: any) {
+      console.error('Verification error:', JSON.stringify(error, null, 2));
+      let errorMessage = 'Invalid verification code. Please try again.';
+      if (error.clerkError && error.errors) {
+        errorMessage = error.errors[0]?.longMessage || errorMessage;
+      } else if (error.message.includes('Network request failed')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      }
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <View style={defaultStyles.container}>
-      <Text style={defaultStyles.header}>6-digit code</Text>
-      <Text style={defaultStyles.descriptionText}>
-        Code sent to {phone} unless you already have an account
-      </Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior="padding"
+        keyboardVerticalOffset={keyboardVerticalOffset}>
+        <View style={styles.innerContainer}>
+          <Text style={styles.header}>Verify Your Phone</Text>
+          <Text style={styles.subHeader}>Enter the code sent to {phone}</Text>
 
-      <CodeField
-        ref={ref}
-        {...props}
-        value={code}
-        onChangeText={setCode}
-        cellCount={CELL_COUNT}
-        rootStyle={styles.codeFieldRoot}
-        keyboardType="number-pad"
-        textContentType="oneTimeCode"
-        renderCell={({ index, symbol, isFocused }) => (
-          <Fragment key={index}>
-            <View
-              // Make sure that you pass onLayout={getCellOnLayoutHandler(index)} prop to root component of "Cell"
-              onLayout={getCellOnLayoutHandler(index)}
-              key={index}
-              style={[styles.cellRoot, isFocused && styles.focusCell]}>
-              <Text style={styles.cellText}>{symbol || (isFocused ? <Cursor /> : null)}</Text>
-            </View>
-            {index === 2 ? <View key={`separator-${index}`} style={styles.separator} /> : null}
-          </Fragment>
-        )}
-      />
+          <TextInput
+            style={styles.input}
+            placeholder="Verification Code"
+            placeholderTextColor={Colors.gray}
+            keyboardType="numeric"
+            value={code}
+            onChangeText={setCode}
+          />
 
-      <Link href={'/login'} replace asChild>
-        <TouchableOpacity>
-          <Text style={[defaultStyles.textLink]}>Already have an account? Log in</Text>
-        </TouchableOpacity>
-      </Link>
-    </View>
+          <TouchableOpacity
+            style={[
+              defaultStyles.pillButton,
+              code ? styles.enabled : styles.disabled,
+              styles.verifyButton,
+            ]}
+            onPress={onVerify}
+            disabled={!code || loading}>
+            <Text style={defaultStyles.buttonText}>Verify</Text>
+            {loading && <ActivityIndicator size="small" color="#fff" style={{ marginLeft: 8 }} />}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 };
 
 const styles = StyleSheet.create({
-  codeFieldRoot: {
-    marginVertical: 20,
-    marginLeft: 'auto',
-    marginRight: 'auto',
-    gap: 12,
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
   },
-  cellRoot: {
-    width: 45,
-    height: 60,
-    justifyContent: 'center',
+  innerContainer: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 60,
     alignItems: 'center',
+  },
+  header: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: Colors.dark,
+    marginBottom: 8,
+  },
+  subHeader: {
+    fontSize: 16,
+    color: Colors.gray,
+    marginBottom: 32,
+  },
+  input: {
+    width: '100%',
     backgroundColor: Colors.lightGray,
-    borderRadius: 8,
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 16,
+    color: Colors.dark,
+    marginBottom: 24,
   },
-  cellText: {
-    color: '#000',
-    fontSize: 36,
-    textAlign: 'center',
+  verifyButton: {
+    width: '100%',
+    marginBottom: 24,
   },
-  focusCell: {
-    paddingBottom: 8,
+  enabled: {
+    backgroundColor: Colors.primary,
   },
-  separator: {
-    height: 2,
-    width: 10,
-    backgroundColor: Colors.gray,
-    alignSelf: 'center',
+  disabled: {
+    backgroundColor: Colors.primaryMuted,
   },
 });
-export default Page;
+
+export default VerifyPhone;

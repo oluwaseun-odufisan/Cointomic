@@ -12,26 +12,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SecureStore from 'expo-secure-store';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { UserInactivityProvider } from '@/context/UserInactivity';
+import { tokenCache } from '@/app/lib/auth';
 
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 const queryClient = new QueryClient();
-
-const tokenCache = {
-  async getToken(key: string) {
-    try {
-      return await SecureStore.getItemAsync(key);
-    } catch (err) {
-      return null;
-    }
-  },
-  async saveToken(key: string, value: string) {
-    try {
-      await SecureStore.setItemAsync(key, value);
-    } catch (err) {
-      return;
-    }
-  },
-};
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -67,7 +51,7 @@ const InnerLayout = () => {
     if (isSignedIn && !inAuthGroup && !isSignupOrLogin) {
       router.replace('/(authenticated)/(tabs)/home');
     } else if (!isSignedIn && inAuthGroup) {
-      router.replace('/login'); // Redirect to login instead of index
+      router.replace('/login');
     }
   }, [isSignedIn, isLoaded, isMounted]);
 
@@ -114,6 +98,20 @@ const InnerLayout = () => {
         <Stack.Screen name="help" options={{ title: 'Help', presentation: 'modal' }} />
         <Stack.Screen
           name="verify/[phone]"
+          options={{
+            title: '',
+            headerBackTitle: '',
+            headerShadowVisible: false,
+            headerStyle: { backgroundColor: Colors.background },
+            headerLeft: () => (
+              <TouchableOpacity onPress={router.back}>
+                <Ionicons name="arrow-back" size={34} color={Colors.dark} />
+              </TouchableOpacity>
+            ),
+          }}
+        />
+        <Stack.Screen
+          name="verify/[email]"
           options={{
             title: '',
             headerBackTitle: '',
@@ -175,7 +173,7 @@ const InnerLayout = () => {
 
 const RootLayout = () => {
   if (!CLERK_PUBLISHABLE_KEY) {
-    console.error('Missing Clerk Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env file.');
+    console.error('Missing Clerk Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env.local file.');
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <Text>Configuration Error: Missing Clerk Publishable Key</Text>

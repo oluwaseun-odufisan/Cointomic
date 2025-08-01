@@ -1,311 +1,313 @@
-const API_KEY = process.env.CRYPTO_API_KEY;
+/**
+ * API handler for fetching latest cryptocurrency listings from CoinMarketCap.
+ * @module listing+api
+ */
 
-export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const limit = url.searchParams.get("limit") || 5;
+import { Response } from 'expo-router/server';
 
-  const response = await fetch(
-    `https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?start=1&limit=${limit}&convert=EUR`,
-    {
-      headers: {
-        "X-CMC_PRO_API_KEY": API_KEY!,
-      },
-    }
-  );
-
-  const res = await response.json();
-  return Response.json(res.data);
-  // return Response.json(data);
+/** Interface for cryptocurrency quote */
+interface Quote {
+  EUR: {
+    price: number;
+    volume_24h: number;
+    volume_change_24h: number;
+    percent_change_1h: number;
+    percent_change_24h: number;
+    percent_change_7d: number;
+    percent_change_30d: number;
+    percent_change_60d: number;
+    percent_change_90d: number;
+    market_cap: number;
+    market_cap_dominance: number;
+    fully_diluted_market_cap: number;
+    tvl: number | null;
+    last_updated: string;
+  };
 }
 
-const data = [
+/** Interface for cryptocurrency listing */
+interface CryptoListing {
+  id: number;
+  name: string;
+  symbol: string;
+  slug: string;
+  num_market_pairs: number;
+  date_added: string;
+  tags: string[];
+  max_supply: number | null;
+  circulating_supply: number;
+  total_supply: number;
+  infinite_supply: boolean;
+  platform: { id: number; name: string; symbol: string; slug: string; token_address: string } | null;
+  cmc_rank: number;
+  self_reported_circulating_supply: number | null;
+  self_reported_market_cap: number | null;
+  tvl_ratio: number | null;
+  last_updated: string;
+  quote: Quote;
+}
+
+/** Interface for API response */
+interface ApiResponse {
+  data: CryptoListing[];
+  status: { error_code: number; error_message: string | null };
+}
+
+/**
+ * GET handler for fetching latest cryptocurrency listings.
+ * @param request - The incoming Expo request
+ * @returns JSON response with cryptocurrency listings or error
+ */
+export async function GET(request: Request) {
+  const API_KEY = process.env.CRYPTO_API_KEY;
+  if (!API_KEY) {
+    return Response.json(
+      { status: { error_code: 401, error_message: 'API key is missing' } },
+      { status: 401 }
+    );
+  }
+
+  try {
+    const url = new URL(request.url);
+    const limit = parseInt(url.searchParams.get('limit') || '5', 10);
+
+    if (isNaN(limit) || limit < 1) {
+      return Response.json(
+        { status: { error_code: 400, error_message: 'Invalid limit parameter' } },
+        { status: 400 }
+      );
+    }
+
+    const response = await fetch(
+      `https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?start=1&limit=${limit}&convert=EUR`,
+      {
+        headers: {
+          'X-CMC_PRO_API_KEY': API_KEY,
+          Accept: 'application/json',
+        },
+        next: { revalidate: 300 }, // Cache for 5 minutes
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`CoinMarketCap API error: ${response.statusText}`);
+    }
+
+    const res: ApiResponse = await response.json();
+    return Response.json(res.data, {
+      headers: { 'Cache-Control': 'public, max-age=300' },
+    });
+  } catch (error) {
+    console.error('Error fetching crypto listings:', error);
+    return Response.json(
+      {
+        status: {
+          error_code: 500,
+          error_message: error instanceof Error ? error.message : 'Internal server error',
+        },
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/** Mock data for cryptocurrency listings (July 2025) */
+const data: CryptoListing[] = [
   {
     id: 1,
-    name: "Bitcoin",
-    symbol: "BTC",
-    slug: "bitcoin",
-    num_market_pairs: 10848,
-    date_added: "2010-07-13T00:00:00.000Z",
+    name: 'Bitcoin',
+    symbol: 'BTC',
+    slug: 'bitcoin',
+    num_market_pairs: 11250,
+    date_added: '2009-01-03T00:00:00.000Z',
     tags: [
-      "mineable",
-      "pow",
-      "sha-256",
-      "store-of-value",
-      "state-channel",
-      "coinbase-ventures-portfolio",
-      "three-arrows-capital-portfolio",
-      "polychain-capital-portfolio",
-      "binance-labs-portfolio",
-      "blockchain-capital-portfolio",
-      "boostvc-portfolio",
-      "cms-holdings-portfolio",
-      "dcg-portfolio",
-      "dragonfly-capital-portfolio",
-      "electric-capital-portfolio",
-      "fabric-ventures-portfolio",
-      "framework-ventures-portfolio",
-      "galaxy-digital-portfolio",
-      "huobi-capital-portfolio",
-      "alameda-research-portfolio",
-      "a16z-portfolio",
-      "1confirmation-portfolio",
-      "winklevoss-capital-portfolio",
-      "usv-portfolio",
-      "placeholder-ventures-portfolio",
-      "pantera-capital-portfolio",
-      "multicoin-capital-portfolio",
-      "paradigm-portfolio",
-      "bitcoin-ecosystem",
-      "ftx-bankruptcy-estate",
+      'mineable',
+      'pow',
+      'sha-256',
+      'store-of-value',
+      'bitcoin-ecosystem',
+      'institutional-adoption',
     ],
     max_supply: 21000000,
-    circulating_supply: 19645193,
-    total_supply: 19645193,
+    circulating_supply: 19730250,
+    total_supply: 19730250,
     infinite_supply: false,
     platform: null,
     cmc_rank: 1,
     self_reported_circulating_supply: null,
     self_reported_market_cap: null,
     tvl_ratio: null,
-    last_updated: "2024-03-05T09:45:00.000Z",
+    last_updated: '2025-07-31T00:00:00.000Z',
     quote: {
       EUR: {
-        price: 61172.17695743709,
-        volume_24h: 69278106372.44798,
-        volume_change_24h: 80.6251,
-        percent_change_1h: -0.48405293,
-        percent_change_24h: 1.68774533,
-        percent_change_7d: 17.06519156,
-        percent_change_30d: 54.71398276,
-        percent_change_60d: 50.57066489,
-        percent_change_90d: 51.40362093,
-        market_cap: 1201739222559.0044,
-        market_cap_dominance: 52.3011,
-        fully_diluted_market_cap: 1284615716106.177,
+        price: 78650.42,
+        volume_24h: 89234567890,
+        volume_change_24h: 45.2312,
+        percent_change_1h: -0.321456,
+        percent_change_24h: 3.121456,
+        percent_change_7d: 12.456789,
+        percent_change_30d: 25.678901,
+        percent_change_60d: 30.234567,
+        percent_change_90d: 45.789012,
+        market_cap: 1552134567890,
+        market_cap_dominance: 50.1234,
+        fully_diluted_market_cap: 1651658820000,
         tvl: null,
-        last_updated: "2024-03-05T09:45:04.000Z",
+        last_updated: '2025-07-31T00:00:00.000Z',
       },
     },
   },
   {
     id: 1027,
-    name: "Ethereum",
-    symbol: "ETH",
-    slug: "ethereum",
-    num_market_pairs: 8497,
-    date_added: "2015-08-07T00:00:00.000Z",
-    tags: [
-      "pos",
-      "smart-contracts",
-      "ethereum-ecosystem",
-      "coinbase-ventures-portfolio",
-      "three-arrows-capital-portfolio",
-      "polychain-capital-portfolio",
-      "binance-labs-portfolio",
-      "blockchain-capital-portfolio",
-      "boostvc-portfolio",
-      "cms-holdings-portfolio",
-      "dcg-portfolio",
-      "dragonfly-capital-portfolio",
-      "electric-capital-portfolio",
-      "fabric-ventures-portfolio",
-      "framework-ventures-portfolio",
-      "hashkey-capital-portfolio",
-      "kenetic-capital-portfolio",
-      "huobi-capital-portfolio",
-      "alameda-research-portfolio",
-      "a16z-portfolio",
-      "1confirmation-portfolio",
-      "winklevoss-capital-portfolio",
-      "usv-portfolio",
-      "placeholder-ventures-portfolio",
-      "pantera-capital-portfolio",
-      "multicoin-capital-portfolio",
-      "paradigm-portfolio",
-      "injective-ecosystem",
-      "layer-1",
-      "ftx-bankruptcy-estate",
-    ],
+    name: 'Ethereum',
+    symbol: 'ETH',
+    slug: 'ethereum',
+    num_market_pairs: 8750,
+    date_added: '2015-07-30T00:00:00.000Z',
+    tags: ['smart-contracts', 'ethereum-ecosystem', 'layer-1', 'pos'],
     max_supply: null,
-    circulating_supply: 120127131.78995213,
-    total_supply: 120127131.78995213,
+    circulating_supply: 120350789,
+    total_supply: 120350789,
     infinite_supply: true,
     platform: null,
     cmc_rank: 2,
     self_reported_circulating_supply: null,
     self_reported_market_cap: null,
     tvl_ratio: null,
-    last_updated: "2024-03-05T09:45:00.000Z",
+    last_updated: '2025-07-31T00:00:00.000Z',
     quote: {
       EUR: {
-        price: 3397.272518256182,
-        volume_24h: 28951505589.23718,
-        volume_change_24h: 81.3652,
-        percent_change_1h: -0.27798853,
-        percent_change_24h: 4.42728608,
-        percent_change_7d: 13.33097334,
-        percent_change_30d: 60.35701006,
-        percent_change_60d: 62.89696558,
-        percent_change_90d: 61.68737585,
-        market_cap: 408104603526.94293,
-        market_cap_dominance: 17.7721,
-        fully_diluted_market_cap: 408104603526.9387,
+        price: 4162.89,
+        volume_24h: 35678901234,
+        volume_change_24h: 38.4567,
+        percent_change_1h: -0.234567,
+        percent_change_24h: 5.231456,
+        percent_change_7d: 10.123456,
+        percent_change_30d: 28.456789,
+        percent_change_60d: 35.678901,
+        percent_change_90d: 50.234567,
+        market_cap: 500912345678,
+        market_cap_dominance: 16.1876,
+        fully_diluted_market_cap: 500912345678,
         tvl: null,
-        last_updated: "2024-03-05T09:45:04.000Z",
+        last_updated: '2025-07-31T00:00:00.000Z',
       },
     },
   },
   {
     id: 825,
-    name: "Tether USDt",
-    symbol: "USDT",
-    slug: "tether",
-    num_market_pairs: 76927,
-    date_added: "2015-02-25T00:00:00.000Z",
-    tags: [
-      "payments",
-      "stablecoin",
-      "asset-backed-stablecoin",
-      "avalanche-ecosystem",
-      "solana-ecosystem",
-      "arbitrum-ecosytem",
-      "moonriver-ecosystem",
-      "injective-ecosystem",
-      "bnb-chain",
-      "usd-stablecoin",
-      "optimism-ecosystem",
-    ],
+    name: 'Tether USDt',
+    symbol: 'USDT',
+    slug: 'tether',
+    num_market_pairs: 79500,
+    date_added: '2014-10-06T00:00:00.000Z',
+    tags: ['stablecoin', 'usd-stablecoin', 'ethereum-ecosystem', 'solana-ecosystem'],
     max_supply: null,
-    circulating_supply: 100044694548.97124,
-    total_supply: 103800078701.87814,
+    circulating_supply: 104750987654,
+    total_supply: 108500123456,
     platform: {
       id: 1027,
-      name: "Ethereum",
-      symbol: "ETH",
-      slug: "ethereum",
-      token_address: "0xdac17f958d2ee523a2206206994597c13d831ec7",
+      name: 'Ethereum',
+      symbol: 'ETH',
+      slug: 'ethereum',
+      token_address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
     },
     infinite_supply: true,
     cmc_rank: 3,
     self_reported_circulating_supply: null,
     self_reported_market_cap: null,
     tvl_ratio: null,
-    last_updated: "2024-03-05T09:44:00.000Z",
+    last_updated: '2025-07-31T00:00:00.000Z',
     quote: {
       EUR: {
-        price: 0.9218759200172967,
-        volume_24h: 127574629087.67787,
-        volume_change_24h: 63.8698,
-        percent_change_1h: -0.00975918,
-        percent_change_24h: -0.0079453,
-        percent_change_7d: 0.00805054,
-        percent_change_30d: 0.09012731,
-        percent_change_60d: -0.06996444,
-        percent_change_90d: 0.05387782,
-        market_cap: 92228794830.18228,
-        market_cap_dominance: 4.0164,
-        fully_diluted_market_cap: 95690793051.16272,
+        price: 0.92345678,
+        volume_24h: 145678901234,
+        volume_change_24h: 50.1234,
+        percent_change_1h: -0.012345,
+        percent_change_24h: -0.021234,
+        percent_change_7d: 0.012345,
+        percent_change_30d: 0.098765,
+        percent_change_60d: -0.056789,
+        percent_change_90d: 0.067890,
+        market_cap: 96734567890,
+        market_cap_dominance: 3.9876,
+        fully_diluted_market_cap: 100198765432,
         tvl: null,
-        last_updated: "2024-03-05T09:45:04.000Z",
+        last_updated: '2025-07-31T00:00:00.000Z',
       },
     },
   },
   {
     id: 1839,
-    name: "BNB",
-    symbol: "BNB",
-    slug: "bnb",
-    num_market_pairs: 2081,
-    date_added: "2017-07-25T00:00:00.000Z",
-    tags: [
-      "marketplace",
-      "centralized-exchange",
-      "payments",
-      "smart-contracts",
-      "alameda-research-portfolio",
-      "multicoin-capital-portfolio",
-      "bnb-chain",
-      "layer-1",
-      "sec-security-token",
-      "alleged-sec-securities",
-      "celsius-bankruptcy-estate",
-    ],
+    name: 'BNB',
+    symbol: 'BNB',
+    slug: 'bnb',
+    num_market_pairs: 2150,
+    date_added: '2017-07-25T00:00:00.000Z',
+    tags: ['smart-contracts', 'bnb-chain', 'layer-1'],
     max_supply: null,
-    circulating_supply: 149541397.38261488,
-    total_supply: 149541397.38261488,
+    circulating_supply: 148920456,
+    total_supply: 148920456,
     infinite_supply: false,
     platform: null,
     cmc_rank: 4,
     self_reported_circulating_supply: null,
     self_reported_market_cap: null,
     tvl_ratio: null,
-    last_updated: "2024-03-05T09:44:00.000Z",
+    last_updated: '2025-07-31T00:00:00.000Z',
     quote: {
       EUR: {
-        price: 385.90384494527785,
-        volume_24h: 2341285560.455857,
-        volume_change_24h: 39.8193,
-        percent_change_1h: -0.02460092,
-        percent_change_24h: -0.9529521,
-        percent_change_7d: 4.99520205,
-        percent_change_30d: 39.39965358,
-        percent_change_60d: 30.52969375,
-        percent_change_90d: 78.57628595,
-        market_cap: 57708600228.44079,
-        market_cap_dominance: 2.5115,
-        fully_diluted_market_cap: 57708600228.44533,
+        price: 564.78,
+        volume_24h: 2890123456,
+        volume_change_24h: 25.6789,
+        percent_change_1h: -0.098765,
+        percent_change_24h: 1.891234,
+        percent_change_7d: 6.456789,
+        percent_change_30d: 20.123456,
+        percent_change_60d: 25.789012,
+        percent_change_90d: 40.234567,
+        market_cap: 84123456789,
+        market_cap_dominance: 2.7654,
+        fully_diluted_market_cap: 84123456789,
         tvl: null,
-        last_updated: "2024-03-05T09:45:04.000Z",
+        last_updated: '2025-07-31T00:00:00.000Z',
       },
     },
   },
   {
     id: 5426,
-    name: "Solana",
-    symbol: "SOL",
-    slug: "solana",
-    num_market_pairs: 631,
-    date_added: "2020-04-10T00:00:00.000Z",
-    tags: [
-      "pos",
-      "platform",
-      "solana-ecosystem",
-      "cms-holdings-portfolio",
-      "kenetic-capital-portfolio",
-      "alameda-research-portfolio",
-      "multicoin-capital-portfolio",
-      "okex-blockdream-ventures-portfolio",
-      "layer-1",
-      "ftx-bankruptcy-estate",
-      "sec-security-token",
-      "alleged-sec-securities",
-    ],
+    name: 'Solana',
+    symbol: 'SOL',
+    slug: 'solana',
+    num_market_pairs: 680,
+    date_added: '2020-03-16T00:00:00.000Z',
+    tags: ['pos', 'solana-ecosystem', 'layer-1'],
     max_supply: null,
-    circulating_supply: 442315505.4744836,
-    total_supply: 571041563.3089167,
+    circulating_supply: 456320789,
+    total_supply: 582750123,
     infinite_supply: true,
     platform: null,
     cmc_rank: 5,
     self_reported_circulating_supply: null,
     self_reported_market_cap: null,
     tvl_ratio: null,
-    last_updated: "2024-03-05T09:45:00.000Z",
+    last_updated: '2025-07-31T00:00:00.000Z',
     quote: {
       EUR: {
-        price: 119.63987139843265,
-        volume_24h: 4498107313.186403,
-        volume_change_24h: 63.4076,
-        percent_change_1h: -0.07141547,
-        percent_change_24h: -2.70892074,
-        percent_change_7d: 16.58951585,
-        percent_change_30d: 33.46755042,
-        percent_change_60d: 26.84646008,
-        percent_change_90d: 97.93597163,
-        market_cap: 52918570192.49995,
-        market_cap_dominance: 2.3031,
-        fully_diluted_market_cap: 68319339197.442345,
+        price: 168.45,
+        volume_24h: 5678901234,
+        volume_change_24h: 35.4567,
+        percent_change_1h: -0.067890,
+        percent_change_24h: -0.951234,
+        percent_change_7d: 10.789012,
+        percent_change_30d: 20.234567,
+        percent_change_60d: 25.678901,
+        percent_change_90d: 50.123456,
+        market_cap: 76834567890,
+        market_cap_dominance: 2.5123,
+        fully_diluted_market_cap: 98123456789,
         tvl: null,
-        last_updated: "2024-03-05T09:45:04.000Z",
+        last_updated: '2025-07-31T00:00:00.000Z',
       },
     },
   },

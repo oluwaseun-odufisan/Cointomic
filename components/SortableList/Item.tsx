@@ -1,4 +1,4 @@
-import React, { ReactNode, RefObject } from 'react';
+import React, { ReactNode } from 'react';
 import { Dimensions, StyleSheet } from 'react-native';
 import Animated, {
   useAnimatedGestureHandler,
@@ -6,16 +6,14 @@ import Animated, {
   useAnimatedReaction,
   withSpring,
   scrollTo,
-  withTiming,
   useSharedValue,
-  runOnJS,
   SharedValue,
   AnimatedRef,
 } from 'react-native-reanimated';
 import { PanGestureHandler, PanGestureHandlerGestureEvent } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 import { animationConfig, COL, getOrder, getPosition, Positions, SIZE } from './Config';
+import Colors from '@/constants/Colors';
 
 interface ItemProps {
   children: ReactNode;
@@ -30,7 +28,7 @@ interface ItemProps {
 const Item = ({ children, positions, id, onDragEnd, scrollView, scrollY, editing }: ItemProps) => {
   const inset = useSafeAreaInsets();
   const containerHeight = Dimensions.get('window').height - inset.top - inset.bottom;
-  const contentHeight = (Object.keys(positions.value).length / COL) * SIZE;
+  const contentHeight = (Object.keys(positions.value).length / COL) * (SIZE + 16);
   const isGestureActive = useSharedValue(false);
 
   const position = getPosition(positions.value[id]!);
@@ -42,10 +40,11 @@ const Item = ({ children, positions, id, onDragEnd, scrollView, scrollY, editing
     (newOrder) => {
       if (!isGestureActive.value) {
         const pos = getPosition(newOrder);
-        translateX.value = withTiming(pos.x, animationConfig);
-        translateY.value = withTiming(pos.y, animationConfig);
+        translateX.value = withSpring(pos.x, animationConfig);
+        translateY.value = withSpring(pos.y, animationConfig);
       }
-    }
+    },
+    [positions.value]
   );
 
   const onGestureEvent = useAnimatedGestureHandler<
@@ -53,7 +52,6 @@ const Item = ({ children, positions, id, onDragEnd, scrollView, scrollY, editing
     { x: number; y: number }
   >({
     onStart: (_, ctx) => {
-      // dont allow drag start if we're done editing
       if (editing) {
         ctx.x = translateX.value;
         ctx.y = translateY.value;
@@ -61,34 +59,26 @@ const Item = ({ children, positions, id, onDragEnd, scrollView, scrollY, editing
       }
     },
     onActive: ({ translationX, translationY }, ctx) => {
-      // dont allow drag if we're done editing
       if (editing) {
         translateX.value = ctx.x + translationX;
         translateY.value = ctx.y + translationY;
-        // 1. We calculate where the tile should be
         const newOrder = getOrder(
           translateX.value,
           translateY.value,
           Object.keys(positions.value).length - 1
         );
-
-        // 2. We swap the positions
-        const oldOlder = positions.value[id];
-        if (newOrder !== oldOlder) {
+        const oldOrder = positions.value[id];
+        if (newOrder !== oldOrder) {
           const idToSwap = Object.keys(positions.value).find(
             (key) => positions.value[key] === newOrder
           );
           if (idToSwap) {
-            // Spread operator is not supported in worklets
-            // And Object.assign doesn't seem to be working on alpha.6
-            const newPositions = JSON.parse(JSON.stringify(positions.value));
+            const newPositions = { ...positions.value };
             newPositions[id] = newOrder;
-            newPositions[idToSwap] = oldOlder;
+            newPositions[idToSwap] = oldOrder;
             positions.value = newPositions;
           }
         }
-
-        // 3. Scroll up and down if necessary
         const lowerBound = scrollY.value;
         const upperBound = lowerBound + containerHeight - SIZE;
         const maxScroll = contentHeight - containerHeight;
@@ -111,26 +101,32 @@ const Item = ({ children, positions, id, onDragEnd, scrollView, scrollY, editing
     },
     onEnd: () => {
       const newPosition = getPosition(positions.value[id]!);
-      translateX.value = withTiming(newPosition.x, animationConfig, () => {
+      translateX.value = withSpring(newPosition.x, animationConfig, () => {
         isGestureActive.value = false;
-        runOnJS(onDragEnd)(positions.value);
+        onDragEnd(positions.value); // Direct call instead of runOnJS
       });
-      translateY.value = withTiming(newPosition.y, animationConfig);
+      translateY.value = withSpring(newPosition.y, animationConfig);
     },
   });
-  const style = useAnimatedStyle(() => {
-    const zIndex = isGestureActive.value ? 100 : 0;
-    const scale = withSpring(isGestureActive.value ? 1.05 : 1);
-    return {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      width: SIZE,
-      height: SIZE,
-      zIndex,
-      transform: [{ translateX: translateX.value }, { translateY: translateY.value }, { scale }],
-    };
-  });
+
+  const style = useAnimatedStyle(() => ({
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: SIZE,
+    height: SIZE,
+    zIndex: isGestureActive.value ? 100 : 0,
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: withSpring(isGestureActive.value ? 1.05 : 1) },
+    ],
+    shadowColor: Colors.dark,
+    shadowOffset: { width: isGestureActive.value ? 4 : 2, height: isGestureActive.value ? 4 : 2 },
+    shadowOpacity: isGestureActive.value ? 0.25 : 0.15,
+    shadowRadius: isGestureActive.value ? 8 : 4,
+  }));
+
   return (
     <Animated.View style={style}>
       <PanGestureHandler enabled={editing} onGestureEvent={onGestureEvent}>

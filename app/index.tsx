@@ -1,27 +1,44 @@
-import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import React, { useEffect } from 'react';
 import { useAssets } from 'expo-asset';
 import { VideoView, useVideoPlayer } from 'expo-video';
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 
 const Index = () => {
-    const [assets] = useAssets([require('@/assets/videos/cointomic.mp4')]);
-    
-    // Initialize video player with the asset URI or an empty string as a fallback
+    const [assets, assetError] = useAssets([require('@/assets/videos/cointomic.mp4')]);
+    const router = useRouter();
+
+    // Initialize video player
     const player = useVideoPlayer({ uri: assets?.[0]?.uri || '' });
 
-    // Configure player settings when assets and player are ready
+    // Configure player settings and navigate after 5 seconds
     useEffect(() => {
-        if (assets && player) {
-            player.loop = true;
-            player.muted = true;
-            player.play();
+        // Navigate to login screen after 5 seconds, regardless of video status
+        const timer = setTimeout(() => {
+            router.push('/login');
+        }, 5000);
+
+        // Try to set up video player
+        if (assets && !assetError && player) {
+            try {
+                player.loop = true;
+                player.muted = true;
+                player.play();
+            } catch (error) {
+                console.error('Error setting up video player:', error);
+                // Navigation will still occur after 5 seconds
+            }
+        } else if (assetError) {
+            console.error('Asset loading error:', assetError);
+            // Navigation will still occur after 5 seconds
         }
-    }, [assets, player]);
+
+        return () => clearTimeout(timer);
+    }, [assets, assetError, player, router]);
 
     return (
         <View style={styles.container}>
-            {assets && player && (
+            {assets && !assetError && (
                 <VideoView
                     style={styles.video}
                     player={player}
@@ -30,26 +47,6 @@ const Index = () => {
                     allowsFullscreen={false}
                 />
             )}
-            <View style={styles.buttonContainer}>
-                <Link
-                    href={'/signup'}
-                    style={styles.signupButton}
-                    asChild
-                >
-                    <TouchableOpacity>
-                        <Text style={styles.buttonText}>Sign up</Text>
-                    </TouchableOpacity>
-                </Link>
-                <Link
-                    href={'/login'}
-                    style={styles.loginButton}
-                    asChild
-                >
-                    <TouchableOpacity>
-                        <Text style={styles.buttonText}>Log in</Text>
-                    </TouchableOpacity>
-                </Link>
-            </View>
         </View>
     );
 };
@@ -63,36 +60,6 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         position: 'absolute',
-    },
-    buttonContainer: {
-        position: 'absolute',
-        top: 40,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
-        paddingHorizontal: 20,
-    },
-    loginButton: {
-        backgroundColor: '#333',
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#fff',
-    },
-    signupButton: {
-        backgroundColor: '#333',
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#fff',
-    },
-    buttonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '500',
-        textAlign: 'center',
     },
 });
 
